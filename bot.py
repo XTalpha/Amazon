@@ -3193,10 +3193,6 @@ async def continue_after_signin_learning(message: Message, state: FSMContext, se
 async def continue_registration_flow(message: Message, state: FSMContext, sess: dict):
     """Continue with the normal registration flow"""
     page = sess["page"]
-    # These variables are extracted for future use in the registration flow
-    _email = sess["email"]
-    _full_name = sess["full_name"]
-    _password = sess["password"]
     
     # Check if email is already registered
     try:
