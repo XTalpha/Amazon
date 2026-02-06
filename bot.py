@@ -7,11 +7,8 @@ import logging
 import json
 import socket
 import urllib.request
-import zipfile
-import base64
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
-from pathlib import Path
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import Command
@@ -1760,15 +1757,8 @@ def generate_iphone_profile():
     ios_versions = ["16_6", "17_0", "17_1", "17_2", "17_3"]
     ios_version = random.choice(ios_versions)
     
-    iphones = [
-        "iPhone14,2",  # iPhone 13 Pro
-        "iPhone14,3",  # iPhone 13 Pro Max
-        "iPhone14,7",  # iPhone 14
-        "iPhone14,8",  # iPhone 14 Plus
-        "iPhone15,2",  # iPhone 14 Pro
-        "iPhone15,3",  # iPhone 14 Pro Max
-    ]
-    iphone = random.choice(iphones)
+    # iPhone device models - currently using generic iPhone in user agent
+    # but can be extended to use specific device identifiers if needed
     
     return {
         "type": "mobile",
@@ -2014,7 +2004,6 @@ async def get_working_free_proxy(test_url="https://www.google.com"):
 def create_proxy_auth_extension(proxy_host, proxy_port, proxy_username, proxy_password):
     """Create a Chrome extension for proxy authentication"""
     import tempfile
-    import zipfile
     
     manifest_json = """
 {
@@ -2570,7 +2559,6 @@ def get_user_id_by_username(username: str) -> Optional[int]:
 
 def get_username_by_user_id(user_id: int) -> Optional[str]:
     """Get username by user ID from cache"""
-    user_id_str = str(user_id)
     for username, cached_user_id in user_cache.items():
         if cached_user_id == user_id:
             return username
@@ -2588,7 +2576,6 @@ logger.info("Modern Chrome flags loaded - no deprecated warnings expected")
 
 # Log environment detection results
 import platform
-import os
 logger.info(f"Environment: {platform.system()} {platform.release()}")
 logger.info(f"Hostname: {platform.node()}")
 logger.info(f"DISPLAY: {os.environ.get('DISPLAY', 'Not set')}")
@@ -2904,7 +2891,7 @@ async def simulate_micro_mouse_movement(page):
         
         await page.mouse.move(new_x, new_y)
         await asyncio.sleep(random.uniform(0.1, 0.3))
-    except Exception as e:
+    except Exception:
         # Silently handle any errors in micro movements
         pass
 
@@ -3206,9 +3193,10 @@ async def continue_after_signin_learning(message: Message, state: FSMContext, se
 async def continue_registration_flow(message: Message, state: FSMContext, sess: dict):
     """Continue with the normal registration flow"""
     page = sess["page"]
-    email = sess["email"]
-    full_name = sess["full_name"]
-    password = sess["password"]
+    # These variables are extracted for future use in the registration flow
+    _email = sess["email"]
+    _full_name = sess["full_name"]
+    _password = sess["password"]
     
     # Check if email is already registered
     try:
@@ -3779,8 +3767,8 @@ async def cmd_users(message: Message, state: FSMContext):
     result = list_all_users()
     await message.answer(result, parse_mode="HTML")
 
-@router.message(Command("admin"))
-async def cmd_admin(message: Message, state: FSMContext):
+@router.message(Command("adminhelp"))
+async def cmd_admin_help(message: Message, state: FSMContext):
     """Admin help command"""
     # Only admin can use this command
     if message.from_user.id != ADMIN_USER_ID:
@@ -3789,10 +3777,11 @@ async def cmd_admin(message: Message, state: FSMContext):
     
     await message.answer(
         "🔧 <b>Admin Commands:</b>\n\n"
-        "• <code>/allow USER_ID duration</code> - Grant access\n"
+        "• <code>/admin @username duration</code> - Grant admin access\n"
+        "• <code>/allow USER_ID duration</code> - Grant user access\n"
         "• <code>/remove USER_ID</code> - Remove access\n"
         "• <code>/users</code> - List all users with access\n"
-        "• <code>/admin</code> - Show this help\n\n"
+        "• <code>/adminhelp</code> - Show this help\n\n"
         "<b>Duration Options:</b>\n"
         "• <code>day</code> - 1 day access\n"
         "• <code>week</code> - 1 week access\n"
@@ -3873,7 +3862,7 @@ async def cmd_learn(message: Message, state: FSMContext):
         
         # Use proven stealth profile for learning
         profile = random.choice(STEALTH_PROFILES)
-        logger.info(f"🥷 Learning with PROVEN stealth profile")
+        logger.info("🥷 Learning with PROVEN stealth profile")
         
         # Display browser settings for learning mode
         display_browser_settings_console(profile, HEADLESS)
@@ -3982,13 +3971,13 @@ async def cmd_sessions(message: Message, state: FSMContext):
     active_sessions = len(user_sessions)
     successful_sessions_count = len(successful_sessions)
     
-    status_text = f"📊 <b>Admin Session Status</b>\n\n"
+    status_text = "📊 <b>Admin Session Status</b>\n\n"
     status_text += f"🔄 <b>Active Sessions:</b> {active_sessions}\n"
     status_text += f"✅ <b>Successful Sessions:</b> {successful_sessions_count}\n\n"
     
     # Show active sessions with user info
     if user_sessions:
-        status_text += f"🔄 <b>Active Account Creations:</b>\n"
+        status_text += "🔄 <b>Active Account Creations:</b>\n"
         for user_id, sess in user_sessions.items():
             # Get username from cache if available
             username = get_username_by_user_id(user_id) or f"ID:{user_id}"
@@ -3998,7 +3987,7 @@ async def cmd_sessions(message: Message, state: FSMContext):
     
     # Show successful sessions with user info
     if successful_sessions:
-        status_text += f"🕒 <b>Successful Sessions (staying alive for cookies):</b>\n"
+        status_text += "🕒 <b>Successful Sessions (staying alive for cookies):</b>\n"
         for user_id, sess in successful_sessions.items():
             expires_at = sess.get('expires_at', 0)
             time_left = max(0, int((expires_at - current_time) / 60))
@@ -4008,10 +3997,10 @@ async def cmd_sessions(message: Message, state: FSMContext):
         status_text += "\n"
     
     if not user_sessions and not successful_sessions:
-        status_text += f"😴 <i>No active sessions</i>\n\n"
+        status_text += "😴 <i>No active sessions</i>\n\n"
     
-    status_text += f"💡 <i>Use /killall to terminate all sessions</i>\n"
-    status_text += f"🔄 <i>Sessions auto-cleanup after 20 minutes</i>"
+    status_text += "💡 <i>Use /killall to terminate all sessions</i>\n"
+    status_text += "🔄 <i>Sessions auto-cleanup after 20 minutes</i>"
     
     await message.answer(status_text, parse_mode="HTML")
 
@@ -4238,7 +4227,7 @@ async def cmd_status(message: Message, state: FSMContext):
         for category, selectors in selector_learner.learned_selectors.items():
             learned_count += len(selectors)
         
-        status_text = f"📊 <b>Learning Status</b>\n\n"
+        status_text = "📊 <b>Learning Status</b>\n\n"
         status_text += f"🧠 Total learned selectors: {learned_count}\n\n"
         
         for category, selectors in selector_learner.learned_selectors.items():
@@ -4364,7 +4353,7 @@ async def got_email(message: Message, state: FSMContext):
     logger.info(f"[LOCATION] {profile.get('city', 'Unknown')}, {profile['timezone']}")
     logger.info(f"[HARDWARE] {profile['hardware_concurrency']} cores, {profile['device_memory']}GB RAM")
     logger.info(f"[NETWORK] {profile['connection_type']}, {profile['connection_downlink']}Mbps")
-    logger.info(f"[SECURITY] ULTIMATE STEALTH - Complete fingerprint spoofing active")
+    logger.info("[SECURITY] ULTIMATE STEALTH - Complete fingerprint spoofing active")
     
     pw = await async_playwright().start()
     
@@ -4408,7 +4397,7 @@ async def got_email(message: Message, state: FSMContext):
                         "username": proxy_username,
                         "password": proxy_password
                     }
-                    logger.info(f"[PROXY] Fallback to standard auth method")
+                    logger.info("[PROXY] Fallback to standard auth method")
             else:
                 # No authentication needed
                 proxy_settings = {
@@ -4900,8 +4889,8 @@ async def got_email(message: Message, state: FSMContext):
         await page.get_by_role("textbox", name="Re-enter password").fill(password)
         logger.info("[SUCCESS] Successfully filled password confirmation")
         await message.answer(
-            f"✅ <b>Password Confirmation</b>\n\n"
-            f"🔒 Successfully confirmed password",
+            "✅ <b>Password Confirmation</b>\n\n"
+            "🔒 Successfully confirmed password",
             parse_mode="HTML"
         )
     except Exception as e:
@@ -5179,7 +5168,6 @@ async def got_email(message: Message, state: FSMContext):
         
         # Check for multiple puzzle/captcha indicators with better detection
         puzzle_detected = False
-        puzzle_selector_matched = None
         
         # Primary puzzle selectors (high confidence)
         primary_puzzle_selectors = [
@@ -5205,7 +5193,6 @@ async def got_email(message: Message, state: FSMContext):
                 element = await page.wait_for_selector(selector, timeout=2000)
                 if element and await element.is_visible():
                     puzzle_detected = True
-                    puzzle_selector_matched = selector
                     logger.warning(f"🧩 PRIMARY puzzle detected with: {selector}")
                     break
             except Exception:
@@ -5218,7 +5205,6 @@ async def got_email(message: Message, state: FSMContext):
                     element = await page.wait_for_selector(selector, timeout=1500)
                     if element and await element.is_visible():
                         puzzle_detected = True
-                        puzzle_selector_matched = selector
                         logger.warning(f"🧩 SECONDARY puzzle detected with: {selector}")
                         break
                 except Exception:
@@ -5700,7 +5686,7 @@ async def got_otp(message: Message, state: FSMContext):
                 return
             else:
                 await message.answer(
-                    f"❌ <b>Button Click Failed</b>\n\n"
+                    "❌ <b>Button Click Failed</b>\n\n"
                     "Could not click the 'Create your Amazon account' button.\n\n"
                     "<b>Possible issues:</b>\n"
                     "• Button not found on page\n"
@@ -5743,10 +5729,10 @@ async def got_otp(message: Message, state: FSMContext):
     # Send cookies as file if too long, otherwise as message
     if len(complete_cookie_string) > 3800:  # Telegram limit is 4096, leave some margin
         # Create cookie file
-        cookie_file_content = f"Amazon Account Cookies\n"
+        cookie_file_content = "Amazon Account Cookies\n"
         cookie_file_content += f"Email: {email}\n"
         cookie_file_content += f"Created: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-        cookie_file_content += f"\n{'='*60}\n\n"
+        cookie_file_content += "\n" + "="*60 + "\n\n"
         cookie_file_content += complete_cookie_string
         
         # Send as document
